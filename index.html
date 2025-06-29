@@ -115,6 +115,9 @@
         text-shadow: 0 0 10px #ffee00;
         margin: 5px 0;
         z-index: 2;
+        display: flex;
+        align-items: center;
+        gap: 5px;
       }
 
       .grid {
@@ -145,19 +148,24 @@
       }
 
       .estatua {
-        background-color: #ccc !important;
-        box-shadow: 0 0 12px #ffee00;
-        border: 2px solid #ffee00;
+        background-color: #c300ff !important;
+        box-shadow: 0 0 12px #ff00ff;
+        border: 2px solid #ff00ff;
+      }
+
+      #mensagem-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 10px;
+        z-index: 2;
       }
 
       #mensagem {
-        margin-top: 10px;
         font-size: 18px;
         color: #aca902;
         text-shadow: 0 0 10px #ffee00;
         min-height: 30px;
-        text-align: center;
-        z-index: 2;
       }
 
       .controls {
@@ -174,22 +182,16 @@
         gap: 10px;
       }
 
-      .control-btn {
-        font-size: 24px;
-        padding: 10px 16px;
+      canvas.control-btn {
         background: #1a1800;
-        color: #ffee00;
         border: 2px solid #ffee00;
         border-radius: 5px;
         box-shadow: 0 0 10px #ffee00;
-        font-family: "VT323", monospace;
         cursor: pointer;
-        user-select: none;
       }
 
-      .control-btn:active {
-        background-color: #ffee00;
-        color: #000;
+      canvas.control-btn:active {
+        filter: brightness(150%);
       }
 
       @media (max-width: 600px) {
@@ -198,22 +200,13 @@
           height: 100vh;
           padding: 5px;
         }
-
         .grid {
           max-width: 100%;
-          grid-template-columns: repeat(11, 1fr);
           gap: 2px;
         }
-
-        .control-btn {
-          font-size: 18px;
-          padding: 8px 12px;
-        }
-
         h2 {
           font-size: 20px;
         }
-
         #status,
         #mensagem {
           font-size: 16px;
@@ -229,60 +222,102 @@
         <div class="vignette"></div>
 
         <h2>Encontre o certo!</h2>
-        <div id="status">Vidas: <span id="vidas">❤️❤️❤️</span></div>
+        <div id="status">
+          Vidas:
+          <span id="vidas">
+            <canvas class="vida" width="24" height="24"></canvas>
+            <canvas class="vida" width="24" height="24"></canvas>
+            <canvas class="vida" width="24" height="24"></canvas>
+          </span>
+        </div>
         <div class="grid" id="grid"></div>
-        <div id="mensagem"></div>
+        <div id="mensagem-container">
+          <canvas id="icone-msg" width="32" height="32"></canvas>
+          <div id="mensagem"></div>
+        </div>
 
         <div class="controls">
-          <button class="control-btn" onclick="mover('ArrowUp')">⬆️</button>
+          <canvas
+            class="control-btn"
+            id="btn-up"
+            width="40"
+            height="40"
+            title="Cima"
+          ></canvas>
           <div class="controls-row">
-            <button class="control-btn" onclick="mover('ArrowLeft')">⬅️</button>
-            <button class="control-btn" onclick="mover('ArrowDown')">⬇️</button>
-            <button class="control-btn" onclick="mover('ArrowRight')">
-              ➡️
-            </button>
+            <canvas
+              class="control-btn"
+              id="btn-left"
+              width="40"
+              height="40"
+              title="Esquerda"
+            ></canvas>
+            <canvas
+              class="control-btn"
+              id="btn-down"
+              width="40"
+              height="40"
+              title="Baixo"
+            ></canvas>
+            <canvas
+              class="control-btn"
+              id="btn-right"
+              width="40"
+              height="40"
+              title="Direita"
+            ></canvas>
           </div>
-          <button class="control-btn" onclick="confirmar()">✅ ENTER</button>
+          <canvas
+            class="control-btn"
+            id="btn-enter"
+            width="40"
+            height="40"
+            title="Confirmar"
+          ></canvas>
         </div>
       </div>
     </div>
+
+    <!-- Sons adicionados -->
+    <audio id="move-sound" src="move.wav" preload="auto"></audio>
+    <audio id="error-sound" src="wrong.wav" preload="auto"></audio>
+    <audio id="correct-sound" src="correct.wav" preload="auto"></audio>
 
     <script>
       const grid = document.getElementById("grid");
       const vidasSpan = document.getElementById("vidas");
       const mensagem = document.getElementById("mensagem");
-
       const GRID_WIDTH = 11;
       const GRID_HEIGHT = 10;
       const estatua = { x: 5, y: 5 };
-      const respostaCorreta = { x: 9, y: 3 };
-      let playerPos = { x: 5, y: 5 };
+      const respostaCorreta = { x: 9, y: 4 };
+      let playerPos = { x: 5, y: 6 };
       let vidas = 3;
+      let jogoFinalizado = false;
+
+      const moveSound = document.getElementById("move-sound");
+      const errorSound = document.getElementById("error-sound");
+      const correctSound = document.getElementById("correct-sound");
 
       function criarGrade() {
         grid.innerHTML = "";
-
         for (let y = 0; y < GRID_HEIGHT; y++) {
           for (let x = 0; x < GRID_WIDTH; x++) {
             const cell = document.createElement("div");
             cell.classList.add("cell");
             cell.dataset.x = x;
             cell.dataset.y = y;
-
             if (x === estatua.x && y === estatua.y) {
               cell.classList.add("estatua");
             }
-
             grid.appendChild(cell);
           }
         }
-
         atualizarGrade();
       }
 
       function atualizarGrade() {
-        const cells = document.querySelectorAll(".cell");
-        cells.forEach((cell) => {
+        document.querySelectorAll(".cell").forEach((cell) => {
           cell.classList.remove("player", "special");
           const x = parseInt(cell.dataset.x);
           const y = parseInt(cell.dataset.y);
@@ -290,82 +325,206 @@
             cell.classList.add("player");
           }
         });
-
-        vidasSpan.textContent = "❤️".repeat(vidas);
+        atualizarVidasCanvas();
       }
 
       function iniciarJogo() {
-        playerPos = { x: 5, y: 5 };
+        playerPos = { x: 5, y: 6 };
         vidas = 3;
+        jogoFinalizado = false;
         mensagem.textContent = "";
         criarGrade();
+
+        desenharSeta(document.getElementById("btn-up").getContext("2d"), "up");
+        desenharSeta(
+          document.getElementById("btn-down").getContext("2d"),
+          "down"
+        );
+        desenharSeta(
+          document.getElementById("btn-left").getContext("2d"),
+          "left"
+        );
+        desenharSeta(
+          document.getElementById("btn-right").getContext("2d"),
+          "right"
+        );
+        desenharCheck(document.getElementById("btn-enter").getContext("2d"));
+
+        document.getElementById("btn-up").onclick = () => mover("ArrowUp");
+        document.getElementById("btn-down").onclick = () => mover("ArrowDown");
+        document.getElementById("btn-left").onclick = () => mover("ArrowLeft");
+        document.getElementById("btn-right").onclick = () =>
+          mover("ArrowRight");
+        document.getElementById("btn-enter").onclick = confirmar;
+
         window.addEventListener("keydown", (e) => {
+          if (jogoFinalizado) return;
           if (
             ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)
-          ) {
+          )
             mover(e.key);
-          } else if (e.key === "Enter") {
-            confirmar();
-          }
+          else if (e.key === "Enter") confirmar();
         });
       }
 
       function mover(direcao) {
-        let newX = playerPos.x;
-        let newY = playerPos.y;
-
-        switch (direcao) {
-          case "ArrowUp":
-            newY--;
-            break;
-          case "ArrowDown":
-            newY++;
-            break;
-          case "ArrowLeft":
-            newX--;
-            break;
-          case "ArrowRight":
-            newX++;
-            break;
-        }
-
+        if (jogoFinalizado) return;
+        let { x, y } = playerPos;
+        if (direcao === "ArrowUp") y--;
+        if (direcao === "ArrowDown") y++;
+        if (direcao === "ArrowLeft") x--;
+        if (direcao === "ArrowRight") x++;
         if (
-          newX < 0 ||
-          newX >= GRID_WIDTH ||
-          newY < 0 ||
-          newY >= GRID_HEIGHT ||
-          (newX === estatua.x && newY === estatua.y)
+          x < 0 ||
+          x >= GRID_WIDTH ||
+          y < 0 ||
+          y >= GRID_HEIGHT ||
+          (x === estatua.x && y === estatua.y)
         )
           return;
-
-        playerPos = { x: newX, y: newY };
+        playerPos = { x, y };
+        moveSound.currentTime = 0;
+        moveSound.play();
         atualizarGrade();
-        mensagem.textContent = "";
+        mostrarMensagem(null, "");
       }
 
       function confirmar() {
+        if (jogoFinalizado) return;
         if (
           playerPos.x === respostaCorreta.x &&
           playerPos.y === respostaCorreta.y
         ) {
-          mensagem.textContent = "🎯 Você encontrou o local correto!";
+          correctSound.currentTime = 0;
+          correctSound.play();
+          mostrarMensagem("acerto", "Você encontrou o local correto!");
           document
             .querySelector(
               `.cell[data-x='${playerPos.x}'][data-y='${playerPos.y}']`
             )
             .classList.add("special");
+          finalizarJogo();
         } else {
           vidas--;
+          errorSound.currentTime = 0;
+          errorSound.play();
           if (vidas <= 0) {
-            mensagem.textContent = "☠️ Você perdeu todas as vidas!";
+            mostrarMensagem("fim", "Você perdeu todas as vidas!");
+            finalizarJogo();
           } else {
-            mensagem.textContent = "❌ Local incorreto! Você perdeu uma vida.";
+            mostrarMensagem("erro", "Local incorreto! Você perdeu uma vida.");
           }
         }
         atualizarGrade();
       }
 
-      iniciarJogo();
+      function finalizarJogo() {
+        jogoFinalizado = true;
+        document
+          .querySelectorAll(".control-btn")
+          .forEach((btn) => (btn.style.pointerEvents = "none"));
+      }
+
+      function desenharSeta(ctx, dir) {
+        ctx.clearRect(0, 0, 40, 40);
+        ctx.fillStyle = "#ffee00";
+        ctx.beginPath();
+        if (dir === "up")
+          ctx.moveTo(20, 8), ctx.lineTo(32, 24), ctx.lineTo(8, 24);
+        if (dir === "down")
+          ctx.moveTo(20, 32), ctx.lineTo(32, 16), ctx.lineTo(8, 16);
+        if (dir === "left")
+          ctx.moveTo(8, 20), ctx.lineTo(24, 8), ctx.lineTo(24, 32);
+        if (dir === "right")
+          ctx.moveTo(32, 20), ctx.lineTo(16, 8), ctx.lineTo(16, 32);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function desenharCheck(ctx) {
+        ctx.clearRect(0, 0, 40, 40);
+        ctx.fillStyle = "#ffee00";
+        ctx.beginPath();
+        ctx.moveTo(10, 20);
+        ctx.lineTo(18, 28);
+        ctx.lineTo(30, 12);
+        ctx.lineTo(26, 8);
+        ctx.lineTo(18, 22);
+        ctx.lineTo(14, 18);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function desenharCoração(ctx) {
+        ctx.clearRect(0, 0, 24, 24);
+        ctx.fillStyle = "#ffee00";
+        ctx.beginPath();
+        ctx.moveTo(12, 20);
+        ctx.bezierCurveTo(2, 12, 6, 2, 12, 8);
+        ctx.bezierCurveTo(18, 2, 22, 12, 12, 20);
+        ctx.fill();
+      }
+
+      function desenharCaveira(ctx) {
+        ctx.clearRect(0, 0, 32, 32);
+        ctx.fillStyle = "#ffee00";
+        ctx.beginPath();
+        ctx.arc(16, 16, 12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.clearRect(10, 12, 4, 4);
+        ctx.clearRect(18, 12, 4, 4);
+        ctx.fillRect(13, 20, 6, 2);
+      }
+
+      function desenharAlvo(ctx) {
+        ctx.clearRect(0, 0, 32, 32);
+        ctx.strokeStyle = "#ffee00";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(16, 16, 12, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(16, 16, 6, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(16, 4);
+        ctx.lineTo(16, 28);
+        ctx.moveTo(4, 16);
+        ctx.lineTo(28, 16);
+        ctx.stroke();
+      }
+
+      function desenharX(ctx) {
+        ctx.clearRect(0, 0, 32, 32);
+        ctx.strokeStyle = "#ffee00";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(8, 8);
+        ctx.lineTo(24, 24);
+        ctx.moveTo(24, 8);
+        ctx.lineTo(8, 24);
+        ctx.stroke();
+      }
+
+      function atualizarVidasCanvas() {
+        const coracoes = document.querySelectorAll(".vida");
+        coracoes.forEach((canvas, i) => {
+          const ctx = canvas.getContext("2d");
+          if (i < vidas) desenharCoração(ctx);
+          else ctx.clearRect(0, 0, 24, 24);
+        });
+      }
+
+      function mostrarMensagem(tipo, texto) {
+        const ctx = document.getElementById("icone-msg").getContext("2d");
+        if (tipo === "acerto") desenharAlvo(ctx);
+        else if (tipo === "erro") desenharX(ctx);
+        else if (tipo === "fim") desenharCaveira(ctx);
+        else ctx.clearRect(0, 0, 32, 32);
+        mensagem.textContent = texto;
+      }
+
+      window.onload = iniciarJogo;
     </script>
   </body>
 </html>
