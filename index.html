@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SALA ROSA – CAMPO ESPECIAL</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=VT323&display=swap");
+
+      body {
+        margin: 0;
+        padding: 0;
+        background: url("background.png") no-repeat center center fixed;
+        background-size: cover;
+        font-family: "VT323", monospace;
+        color: #ffee00;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+      }
+
+      .crt-container {
+        position: relative;
+        width: 90vw;
+        max-width: 800px;
+        height: 95vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .crt {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        border: 4px solid #ffee00;
+        box-shadow: 0 0 20px #ffee00, 0 0 40px rgba(255, 251, 0, 0.5);
+        border-radius: 10px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 10px;
+        box-sizing: border-box;
+      }
+
+      .scanlines,
+      .flicker,
+      .vignette {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      .scanlines {
+        background: linear-gradient(
+          to bottom,
+          rgba(255, 251, 0, 0.03) 0%,
+          rgba(255, 238, 0, 0.1) 50%,
+          rgba(255, 230, 0, 0.03) 100%
+        );
+        background-size: 100% 4px;
+      }
+
+      .flicker {
+        background: rgba(0, 0, 0, 0.05);
+        animation: flicker 0.15s infinite;
+      }
+
+      .vignette {
+        box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.7);
+      }
+
+      @keyframes flicker {
+        0%,
+        20%,
+        100% {
+          opacity: 0.1;
+        }
+        22% {
+          opacity: 0.3;
+        }
+        24% {
+          opacity: 0.2;
+        }
+        30% {
+          opacity: 0.6;
+        }
+        32% {
+          opacity: 0.3;
+        }
+        35% {
+          opacity: 0.7;
+        }
+      }
+
+      h2 {
+        font-size: 28px;
+        text-shadow: 0 0 10px #ffee00;
+        margin: 5px 0;
+        z-index: 2;
+        text-align: center;
+      }
+
+      #status {
+        font-size: 20px;
+        color: #ffee00;
+        text-shadow: 0 0 10px #ffee00;
+        margin: 5px 0;
+        z-index: 2;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(11, 1fr);
+        gap: 3px;
+        width: 100%;
+        max-width: 400px;
+        margin-top: 10px;
+        z-index: 2;
+      }
+
+      .cell {
+        aspect-ratio: 1;
+        background-color: #1a1800;
+        border: 2px solid #ffee00;
+        box-shadow: inset 0 0 10px #ffee00;
+      }
+
+      .player {
+        background-color: #ffee00 !important;
+        box-shadow: 0 0 10px #ffee00;
+      }
+
+      .special {
+        background-color: #00ff99 !important;
+        box-shadow: 0 0 10px #00ff99;
+      }
+
+      .estatua {
+        background-color: #ccc !important;
+        box-shadow: 0 0 12px #ffee00;
+        border: 2px solid #ffee00;
+      }
+
+      #mensagem {
+        margin-top: 10px;
+        font-size: 18px;
+        color: #aca902;
+        text-shadow: 0 0 10px #ffee00;
+        min-height: 30px;
+        text-align: center;
+        z-index: 2;
+      }
+
+      .controls {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        margin-top: 10px;
+        z-index: 3;
+      }
+
+      .controls-row {
+        display: flex;
+        gap: 10px;
+      }
+
+      .control-btn {
+        font-size: 24px;
+        padding: 10px 16px;
+        background: #1a1800;
+        color: #ffee00;
+        border: 2px solid #ffee00;
+        border-radius: 5px;
+        box-shadow: 0 0 10px #ffee00;
+        font-family: "VT323", monospace;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .control-btn:active {
+        background-color: #ffee00;
+        color: #000;
+      }
+
+      @media (max-width: 600px) {
+        .crt-container {
+          width: 100vw;
+          height: 100vh;
+          padding: 5px;
+        }
+
+        .grid {
+          max-width: 100%;
+          grid-template-columns: repeat(11, 1fr);
+          gap: 2px;
+        }
+
+        .control-btn {
+          font-size: 18px;
+          padding: 8px 12px;
+        }
+
+        h2 {
+          font-size: 20px;
+        }
+
+        #status,
+        #mensagem {
+          font-size: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="crt-container">
+      <div class="crt">
+        <div class="scanlines"></div>
+        <div class="flicker"></div>
+        <div class="vignette"></div>
+
+        <h2>Encontre o certo!</h2>
+        <div id="status">Vidas: <span id="vidas">❤️❤️❤️</span></div>
+        <div class="grid" id="grid"></div>
+        <div id="mensagem"></div>
+
+        <div class="controls">
+          <button class="control-btn" onclick="mover('ArrowUp')">⬆️</button>
+          <div class="controls-row">
+            <button class="control-btn" onclick="mover('ArrowLeft')">⬅️</button>
+            <button class="control-btn" onclick="mover('ArrowDown')">⬇️</button>
+            <button class="control-btn" onclick="mover('ArrowRight')">
+              ➡️
+            </button>
+          </div>
+          <button class="control-btn" onclick="confirmar()">✅ ENTER</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const grid = document.getElementById("grid");
+      const vidasSpan = document.getElementById("vidas");
+      const mensagem = document.getElementById("mensagem");
+
+      const GRID_WIDTH = 11;
+      const GRID_HEIGHT = 10;
+      const estatua = { x: 5, y: 5 };
+      const respostaCorreta = { x: 9, y: 3 };
+      let playerPos = { x: 5, y: 5 };
+      let vidas = 3;
+
+      function criarGrade() {
+        grid.innerHTML = "";
+
+        for (let y = 0; y < GRID_HEIGHT; y++) {
+          for (let x = 0; x < GRID_WIDTH; x++) {
+            const cell = document.createElement("div");
+            cell.classList.add("cell");
+            cell.dataset.x = x;
+            cell.dataset.y = y;
+
+            if (x === estatua.x && y === estatua.y) {
+              cell.classList.add("estatua");
+            }
+
+            grid.appendChild(cell);
+          }
+        }
+
+        atualizarGrade();
+      }
+
+      function atualizarGrade() {
+        const cells = document.querySelectorAll(".cell");
+        cells.forEach((cell) => {
+          cell.classList.remove("player", "special");
+          const x = parseInt(cell.dataset.x);
+          const y = parseInt(cell.dataset.y);
+          if (x === playerPos.x && y === playerPos.y) {
+            cell.classList.add("player");
+          }
+        });
+
+        vidasSpan.textContent = "❤️".repeat(vidas);
+      }
+
+      function iniciarJogo() {
+        playerPos = { x: 5, y: 5 };
+        vidas = 3;
+        mensagem.textContent = "";
+        criarGrade();
+        window.addEventListener("keydown", (e) => {
+          if (
+            ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)
+          ) {
+            mover(e.key);
+          } else if (e.key === "Enter") {
+            confirmar();
+          }
+        });
+      }
+
+      function mover(direcao) {
+        let newX = playerPos.x;
+        let newY = playerPos.y;
+
+        switch (direcao) {
+          case "ArrowUp":
+            newY--;
+            break;
+          case "ArrowDown":
+            newY++;
+            break;
+          case "ArrowLeft":
+            newX--;
+            break;
+          case "ArrowRight":
+            newX++;
+            break;
+        }
+
+        if (
+          newX < 0 ||
+          newX >= GRID_WIDTH ||
+          newY < 0 ||
+          newY >= GRID_HEIGHT ||
+          (newX === estatua.x && newY === estatua.y)
+        )
+          return;
+
+        playerPos = { x: newX, y: newY };
+        atualizarGrade();
+        mensagem.textContent = "";
+      }
+
+      function confirmar() {
+        if (
+          playerPos.x === respostaCorreta.x &&
+          playerPos.y === respostaCorreta.y
+        ) {
+          mensagem.textContent = "🎯 Você encontrou o local correto!";
+          document
+            .querySelector(
+              `.cell[data-x='${playerPos.x}'][data-y='${playerPos.y}']`
+            )
+            .classList.add("special");
+        } else {
+          vidas--;
+          if (vidas <= 0) {
+            mensagem.textContent = "☠️ Você perdeu todas as vidas!";
+          } else {
+            mensagem.textContent = "❌ Local incorreto! Você perdeu uma vida.";
+          }
+        }
+        atualizarGrade();
+      }
+
+      iniciarJogo();
+    </script>
+  </body>
+</html>
